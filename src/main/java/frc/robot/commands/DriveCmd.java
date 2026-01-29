@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -12,11 +13,13 @@ public class DriveCmd extends Command {
     private final DriveMotorSubsystem driveSubsystem;
     private final MotorSubsystem motorSubsystem;
     private final XboxController controller;
+    private final Timer timer;
 
     public DriveCmd(DriveMotorSubsystem driveSubsystem, MotorSubsystem motorSubsystem, XboxController controller) {
         this.driveSubsystem = driveSubsystem;
         this.motorSubsystem = motorSubsystem;
         this.controller = controller;
+        this.timer = new Timer();
         this.addRequirements(this.driveSubsystem);
     }
 
@@ -31,13 +34,23 @@ public class DriveCmd extends Command {
         SmartDashboard.putNumber("Right Speed", rightSpeed);
         double intakeVoltage = 0.0;
         double shooterVoltage = 0.0;
+        //TESTING
         if(this.controller.getLeftTriggerAxis()>Drive.TRIGGER_DEAD_BAND){
-            intakeVoltage = Drive.MAX_SHOOT_VOLTAGE*0.7;
-            shooterVoltage = Drive.MAX_SHOOT_VOLTAGE*0.7;
+            // intakeVoltage = Drive.MAX_SHOOT_VOLTAGE*0.7;
+            // shooterVoltage = Drive.MAX_SHOOT_VOLTAGE*0.7;
+            intakeVoltage = Math.log10(this.controller.getLeftTriggerAxis()*8)*Drive.MAX_SHOOT_VOLTAGE;
+            shooterVoltage = Math.log10(this.controller.getLeftTriggerAxis()*8)*Drive.MAX_SHOOT_VOLTAGE;
         }
         else if(this.controller.getRightTriggerAxis()>Drive.TRIGGER_DEAD_BAND){
-            intakeVoltage = Drive.MAX_SHOOT_VOLTAGE;
-            shooterVoltage = -Drive.MAX_SHOOT_VOLTAGE;
+            timer.start();
+            intakeVoltage = Math.log10(this.controller.getRightTriggerAxis()*10)*Drive.MAX_SHOOT_VOLTAGE;
+            if(timer.get()>0.5){
+                shooterVoltage = -Math.log10(this.controller.getRightTriggerAxis()*10)*Drive.MAX_SHOOT_VOLTAGE;
+            }
+        }
+        else{
+            timer.stop();
+            timer.reset();
         }
         this.motorSubsystem.move(intakeVoltage, shooterVoltage);
         SmartDashboard.putNumber("Intake Voltage", intakeVoltage);
