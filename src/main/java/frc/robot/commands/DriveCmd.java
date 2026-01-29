@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.Drive;
 import frc.robot.subsystems.DriveMotorSubsystem;
 import frc.robot.subsystems.MotorSubsystem;
+import java.io.*;
 
 public class DriveCmd extends Command {
     private final DriveMotorSubsystem driveSubsystem;
@@ -34,28 +35,36 @@ public class DriveCmd extends Command {
         SmartDashboard.putNumber("Right Speed", rightSpeed);
         double intakeVoltage = 0.0;
         double shooterVoltage = 0.0;
-        //TESTING
-        if(this.controller.getLeftTriggerAxis()>Drive.TRIGGER_DEAD_BAND){
-            // intakeVoltage = Drive.MAX_SHOOT_VOLTAGE*0.7;
-            // shooterVoltage = Drive.MAX_SHOOT_VOLTAGE*0.7;
-            intakeVoltage = Math.log10(this.controller.getLeftTriggerAxis()*8)*Drive.MAX_SHOOT_VOLTAGE;
-            shooterVoltage = Math.log10(this.controller.getLeftTriggerAxis()*8)*Drive.MAX_SHOOT_VOLTAGE;
-        }
-        else if(this.controller.getRightTriggerAxis()>Drive.TRIGGER_DEAD_BAND){
+        SmartDashboard.putString("state", "None");
+        if (this.controller.getLeftTriggerAxis() > Drive.TRIGGER_DEAD_BAND) {
+            intakeVoltage = Math.log10(this.controller.getLeftTriggerAxis() * 7) * Drive.MAX_SHOOT_VOLTAGE;
+            shooterVoltage = Math.log10(this.controller.getLeftTriggerAxis() * 7) * Drive.MAX_SHOOT_VOLTAGE;
+        } else if (this.controller.getRightTriggerAxis() > Drive.TRIGGER_DEAD_BAND) {
             timer.start();
-            intakeVoltage = Math.log10(this.controller.getRightTriggerAxis()*10)*Drive.MAX_SHOOT_VOLTAGE;
-            if(timer.get()>0.5){
-                shooterVoltage = -Math.log10(this.controller.getRightTriggerAxis()*10)*Drive.MAX_SHOOT_VOLTAGE;
+            intakeVoltage = Math.log10(this.controller.getRightTriggerAxis() * 10) * Drive.MAX_SHOOT_VOLTAGE;
+            SmartDashboard.putString("state", "PreparingT");
+            if (timer.get() > 0.5) {
+                shooterVoltage = -Math.log10(this.controller.getRightTriggerAxis() * 10) * Drive.MAX_SHOOT_VOLTAGE;
+                SmartDashboard.putString("state", "ShootingT");
             }
-        }
-        else{
+        } else if (this.controller.getAButton()) {
+            intakeVoltage = 0.7 * Drive.MAX_SHOOT_VOLTAGE;
+            shooterVoltage = 0.7 * Drive.MAX_SHOOT_VOLTAGE;
+        } else if (this.controller.getBButton()) {
+            timer.start();
+            intakeVoltage = Drive.MAX_SHOOT_VOLTAGE;
+            SmartDashboard.putString("state", "PreparingA");
+            if (timer.get() > 0.5) {
+                shooterVoltage = -Drive.MAX_SHOOT_VOLTAGE;
+                SmartDashboard.putString("state", "ShootingA");
+            }
+        } else {
             timer.stop();
             timer.reset();
         }
         this.motorSubsystem.move(intakeVoltage, shooterVoltage);
         SmartDashboard.putNumber("Intake Voltage", intakeVoltage);
         SmartDashboard.putNumber("Shooter Voltage", shooterVoltage);
-
     }
 
     @Override
